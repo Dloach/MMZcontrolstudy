@@ -20,15 +20,15 @@ const JUMP_BUFFER_TIME: float = 0.15
 const GRVITY: float = 980.0
 const FALL_MULTIPLIER: float = 1.6
 const HURT_DURATION: float = 0.6
-const LAND_DURATION: float = 0.15
+const LAND_DURATION: float = 0.05
 const RESPAWN_POS: Vector2 = Vector2(100.0, 400.0)
 const DASH_SPEED: float = 700.0
-const DASH_DURATION: float = 0.25
+const DASH_DURATION: float = 0.12
 const WALL_SLIDE_MULTIPLIER: float = 0.2
 const WALL_JUMP_PUSH: float = 800.0
-const JUMP_DECLE: float = 10.0
-const DASH_SLIDE_DECEL: float = 0.008
-const AIR_ACCEL: float = 0.1
+const JUMP_DECLE: float = 4200
+const DASH_SLIDE_DECEL: float = 2000
+const AIR_ACCEL: float = 500
 
 # STATE COLORS
 const STATE_COLORS: Dictionary = {
@@ -64,7 +64,7 @@ var is_wall_sliding = false
 func _physics_process(delta: float) -> void:
 	_update_jump_buffer(delta)
 	_apply_gravity(delta)
-	_process_state(current_state)
+	_process_state(delta)
 	move_and_slide()
 	_update_visuals()
 	
@@ -143,10 +143,10 @@ func _state_fall(delta: float) -> void:
 		_change_state(State.WLSL)
 		return
 	if is_dash_jump:
-		if direction != 0.0:
-			velocity.x = move_toward(velocity.x, direction * SPEED, SPEED * DASH_SLIDE_DECEL * delta)
-		elif direction == 0.0:
+		if direction == 0.0:
 			velocity.x = 0.0
+		elif direction != 0.0:
+			velocity.x = move_toward(velocity.x, direction * SPEED, AIR_ACCEL * delta)
 		#elif direction != 0.0:
 			#velocity.x = direction * SPEED
 		elif is_on_wall():
@@ -202,7 +202,7 @@ func _state_dash(delta: float) -> void:
 		if _consume_jump_buffer():
 			_change_state(State.JUMP)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, DASH_SPEED * DASH_SLIDE_DECEL * delta)
+		velocity.x = move_toward(velocity.x, 0.0, DASH_SLIDE_DECEL * delta)
 		var direction: float = Input.get_axis("move_left", "move_right")
 		if _consume_jump_buffer():
 			_change_state(State.JUMP)
@@ -284,5 +284,8 @@ func _update_visuals() -> void:
 
 
 func _on_spike_body_entered(body: Node2D) -> void:
+	if body != self:
+		return
+	
 	if current_state != State.HURT:
 		_change_state(State.HURT)

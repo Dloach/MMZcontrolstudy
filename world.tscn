@@ -166,7 +166,7 @@ color = Color(0.75, 0.217125, 0.0975, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=112384702]
-position = Vector2(351, 411)
+position = Vector2(351, 474)
 script = ExtResource("1_f3sb7")
 metadata/_edit_group_ = true
 
