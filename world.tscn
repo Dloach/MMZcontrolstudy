@@ -1,3 +1,209 @@
 [gd_scene format=3 uid="uid://dn7wme61dfqkk"]
 
-[node name="World" type="Node2D"]
+[ext_resource type="Texture2D" uid="uid://cq1eei3af8pua" path="res://assets/Blue Units/Lancer/Lancer_Idle.png" id="1_f3sb7"]
+[ext_resource type="Script" uid="uid://cnbmeww70y8qa" path="res://player.gd" id="1_fj7yv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_837k6"]
+size = Vector2(38, 69)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fj7yv"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(0, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tlwt5"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqk2v"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(640, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_036b0"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(960, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dwbse"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(1280, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pkg7o"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(1600, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gbfbk"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(1920, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ioo17"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(2240, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wse8f"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(2560, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ic0uy"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(2880, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k3n1d"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(3200, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2o6r5"]
+atlas = ExtResource("1_f3sb7")
+region = Rect2(3520, 0, 320, 320)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_isi4y"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fj7yv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tlwt5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aqk2v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_036b0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dwbse")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pkg7o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gbfbk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ioo17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wse8f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ic0uy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k3n1d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2o6r5")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_isi4y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_isi4y"]
+size = Vector2(150, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n7akx"]
+size = Vector2(128, 300)
+
+[node name="World" type="Node2D" unique_id=2085653485]
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=721388580]
+position = Vector2(262, 370)
+script = ExtResource("1_fj7yv")
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1994952222]
+position = Vector2(-15, -2.5)
+shape = SubResource("RectangleShape2D_837k6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player" unique_id=441144371]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_isi4y")
+animation = &"idle"
+frame_progress = 0.94659334
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]
+zoom = Vector2(1.16, 1.16)
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+
+[node name="ground" type="StaticBody2D" parent="." unique_id=1386042663]
+position = Vector2(548, 494)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ground" unique_id=560418641]
+shape = SubResource("WorldBoundaryShape2D_isi4y")
+
+[node name="ColorRect" type="ColorRect" parent="ground" unique_id=1279141035]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -4000.0
+offset_right = 4000.0
+offset_bottom = 40.0
+grow_horizontal = 2
+color = Color(0.5254644, 0.3249902, 0.07757605, 1)
+
+[node name="Platform" type="StaticBody2D" parent="." unique_id=234923279]
+position = Vector2(715, 430)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform" unique_id=612500596]
+shape = SubResource("RectangleShape2D_isi4y")
+
+[node name="ColorRect" type="ColorRect" parent="Platform" unique_id=1331019221]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -75.0
+offset_top = -20.0
+offset_right = 75.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+
+[node name="Platform2" type="StaticBody2D" parent="." unique_id=1685843979]
+position = Vector2(1006, 393)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2" unique_id=122611405]
+shape = SubResource("RectangleShape2D_isi4y")
+
+[node name="ColorRect" type="ColorRect" parent="Platform2" unique_id=983504455]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -75.0
+offset_top = -20.0
+offset_right = 75.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=979331332]
+position = Vector2(104, 347)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1365942166]
+shape = SubResource("RectangleShape2D_n7akx")
+
+[node name="ColorRect" type="ColorRect" parent="StaticBody2D/CollisionShape2D" unique_id=1943481438]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -150.0
+offset_right = 64.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)
