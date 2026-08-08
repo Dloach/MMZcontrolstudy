@@ -194,8 +194,11 @@ text = "Idle"
 horizontal_alignment = 1
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1721245479]
-zoom = Vector2(1.89, 1.89)
+zoom = Vector2(1.145, 1.145)
 position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
 
 [connection signal="body_entered" from="Spike" to="Player" method="_on_spike_body_entered"]
 [connection signal="body_entered" from="Spike2" to="Player" method="_on_spike_body_entered"]

@@ -16,14 +16,17 @@ enum State {
 # CONSTANTS
 const SPEED: float = 350.0
 const JUMP_VELOCITY: float = -650.0
+const JUMP_BUFFER_TIME: float = 0.15
 const GRVITY: float = 980.0
 const FALL_MULTIPLIER: float = 1.6
 const HURT_DURATION: float = 0.6
 const LAND_DURATION: float = 0.15
 const RESPAWN_POS: Vector2 = Vector2(100.0, 400.0)
-const DASH_SPEED: float = 800.0
+const DASH_SPEED: float = 700.0
 const DASH_DURATION: float = 0.25
-const WALL_SLIDE_MULTIPLIER: float = 0.35
+const WALL_SLIDE_MULTIPLIER: float = 0.2
+const WALL_JUMP_PUSH: float = 800.0
+const JUMP_DECLE: float = 10.0
 const DASH_SLIDE_DECEL: float = 0.008
 const AIR_ACCEL: float = 0.1
 
@@ -48,7 +51,9 @@ var last_direction: float = 1.0
 var hurt_timer: float = 0.0
 var land_timer: float = 0.0
 var dash_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
 var is_dash_jump = false
+var is_wall_sliding = false
 
 
 #NODE REFERENCE
@@ -57,15 +62,20 @@ var is_dash_jump = false
 
 
 func _physics_process(delta: float) -> void:
+	_update_jump_buffer(delta)
 	_apply_gravity(delta)
 	_process_state(current_state)
 	move_and_slide()
 	_update_visuals()
 	
+	
 func _apply_gravity(delta: float) -> void:
 	#Only apply airborne
 	if not is_on_floor():
-		velocity.y += GRVITY * FALL_MULTIPLIER * delta
+		if is_wall_sliding:
+			velocity.y += GRVITY * FALL_MULTIPLIER * WALL_SLIDE_MULTIPLIER * delta
+		else:
+			velocity.y += GRVITY * FALL_MULTIPLIER * delta
 		
 func _update_facing(direction: float) -> void:
 	if direction != 0.0:
@@ -81,16 +91,21 @@ func _process_state(delta: float) -> void:
 		State.LAND: _state_land(delta)
 		State.HURT: _state_hurt(delta)
 		State.DASH: _state_dash(delta)
+		State.WLSL: _state_wlsl(delta)
+		
+#========================================================================
+#                        STATES
+#========================================================================
 		
 func _state_idle() -> void:
 	velocity.x = move_toward(velocity.x, 0.0, SPEED)
 	
 	#Changing the state
 	var direction: float = Input.get_axis("move_left", "move_right")
-	if direction != 0:
-		_change_state(State.WALK)
-	elif Input.is_action_just_pressed("jump") and is_on_floor():
+	if _consume_jump_buffer():
 		_change_state(State.JUMP)
+	elif direction != 0:
+		_change_state(State.WALK)
 	elif Input.is_action_just_pressed("dash"):
 		_change_state(State.DASH)
 	elif not is_on_floor():
@@ -105,10 +120,10 @@ func _state_walk() -> void:
 	_update_facing(direction)
 	
 	 #Changing the state
-	if direction == 0.0:
-		_change_state(State.IDLE)
-	elif Input.is_action_just_pressed("jump") and is_on_floor():
+	if _consume_jump_buffer():
 		_change_state(State.JUMP)
+	elif direction == 0.0:
+		_change_state(State.IDLE)
 	elif Input.is_action_just_pressed("dash"):
 		_change_state(State.DASH)
 	elif not is_on_floor():
@@ -124,12 +139,18 @@ func _state_jump() -> void:
 	
 func _state_fall(delta: float) -> void:
 	var direction: float = Input.get_axis("move_left", "move_right")
-
+	if _can_wall_state_fall():
+		_change_state(State.WLSL)
+		return
 	if is_dash_jump:
-		if direction == 0.0:
+		if direction != 0.0:
 			velocity.x = move_toward(velocity.x, direction * SPEED, SPEED * DASH_SLIDE_DECEL * delta)
+		elif direction == 0.0:
+			velocity.x = 0.0
+		#elif direction != 0.0:
+			#velocity.x = direction * SPEED
 		elif is_on_wall():
-			velocity.x = 0
+			velocity.x = 0.0
 			velocity.x = direction * SPEED
 		#这个朝向判断注释里的是我的老版本，目前采用的是ai给的优化方式
 		#elif direction != facing:
@@ -150,6 +171,11 @@ func _state_fall(delta: float) -> void:
 func _state_land(delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, SPEED * 3)
 	land_timer -= delta 
+	is_wall_sliding = false
+	
+	if _consume_jump_buffer():
+		_change_state(State.JUMP)
+		return
 	
 	#Tansistions
 	if land_timer <= 0.0:
@@ -173,12 +199,12 @@ func _state_dash(delta: float) -> void:
 	if dash_timer > 0.0:
 		velocity.x = last_direction * DASH_SPEED
 		dash_timer = maxf(dash_timer - delta, 0.0)
-		if Input.is_action_just_pressed("jump") and is_on_floor():
+		if _consume_jump_buffer():
 			_change_state(State.JUMP)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, DASH_SPEED * DASH_SLIDE_DECEL * delta)
 		var direction: float = Input.get_axis("move_left", "move_right")
-		if Input.is_action_just_pressed("jump") and is_on_floor():
+		if _consume_jump_buffer():
 			_change_state(State.JUMP)
 		elif abs(velocity.x) <= 50 and direction == 0.0:
 			_change_state(State.IDLE)
@@ -186,8 +212,50 @@ func _state_dash(delta: float) -> void:
 			_change_state(State.WALK)
 	
 	
+func _state_wlsl(delta: float) -> void:
+	var direction: float = Input.get_axis("move_left", "move_right")
+	is_wall_sliding = true
+	if velocity.y < 0.0:
+		velocity.y = move_toward(velocity.y, 0.0, JUMP_DECLE * delta)
+	
+	if Input.is_action_just_pressed("jump") and is_wall_sliding:
+		velocity.x = get_wall_normal().x * WALL_JUMP_PUSH
+		is_wall_sliding = false
+		_change_state(State.JUMP)
+		return
+	if not is_on_wall() or direction == 0.0:
+		is_wall_sliding = false
+		_change_state(State.FALL)
+		
+	if is_on_floor():
+		is_wall_sliding = false
+		_change_state(State.IDLE)
+
+#========================================================================
+#                       MISC
+#========================================================================
 
 
+
+func _can_wall_state_fall() -> bool:
+	var direction: float = Input.get_axis("move_left", "move_right")
+	if is_on_wall() and not is_on_floor() and direction != 0.0 and direction * get_wall_normal().x < 0.0:
+		return(true)
+	else:
+		return(false)
+
+
+func _update_jump_buffer(delta: float) -> void:
+	jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
+	
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = JUMP_BUFFER_TIME
+		
+func _consume_jump_buffer() -> bool:
+	if jump_buffer_timer > 0.0 and is_on_floor():
+		jump_buffer_timer = 0.0
+		return	true
+	return false
 
 
 func _change_state(new_state: State) -> void:
