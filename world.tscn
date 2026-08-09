@@ -43,6 +43,30 @@ region = Rect2(207, 132, 69, 44)
 atlas = ExtResource("2_fj7yv")
 region = Rect2(276, 132, 69, 44)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_w44yn"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(276, 484, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ah6f"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(345, 484, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g1i3r"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(0, 528, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_my276"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(69, 528, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yx0jh"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(138, 528, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1ew0l"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(207, 528, 69, 44)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_k3n1d"]
 atlas = ExtResource("2_fj7yv")
 region = Rect2(0, 0, 69, 44)
@@ -131,6 +155,18 @@ region = Rect2(0, 88, 69, 44)
 atlas = ExtResource("2_fj7yv")
 region = Rect2(69, 88, 69, 44)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_fj7yv"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(0, 440, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ryup7"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(69, 440, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ytpkv"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(138, 440, 69, 44)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_isi4y"]
 animations = [{
 "frames": [{
@@ -164,6 +200,29 @@ animations = [{
 "loop": 1,
 "name": &"attack1",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w44yn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6ah6f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g1i3r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_my276")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yx0jh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1ew0l")
+}],
+"loop": 0,
+"name": &"dash",
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -245,6 +304,20 @@ animations = [{
 "loop": 1,
 "name": &"run",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fj7yv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ryup7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ytpkv")
+}],
+"loop": 1,
+"name": &"wallslide",
+"speed": 5.0
 }]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_isi4y"]
@@ -267,10 +340,11 @@ shape = SubResource("CapsuleShape2D_tlwt5")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player" unique_id=441144371]
 texture_filter = 1
+position = Vector2(1, -2)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_isi4y")
-animation = &"run"
-offset = Vector2(7.285, -4.88)
+animation = &"idle"
+offset = Vector2(9.375, -2.445)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]
 zoom = Vector2(1.16, 1.16)
@@ -311,7 +385,7 @@ grow_horizontal = 2
 color = Color(0.5254644, 0.3249902, 0.07757605, 1)
 
 [node name="Platform" type="StaticBody2D" parent="." unique_id=234923279]
-position = Vector2(715, 430)
+position = Vector2(715, 402)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform" unique_id=612500596]
@@ -332,7 +406,7 @@ grow_vertical = 2
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
 
 [node name="Platform2" type="StaticBody2D" parent="." unique_id=1685843979]
-position = Vector2(1006, 393)
+position = Vector2(1006, 339)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2" unique_id=122611405]
