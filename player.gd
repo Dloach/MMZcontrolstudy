@@ -31,6 +31,16 @@ const ANIMATION_OFFSETS: Dictionary = {
 }
 
 
+@onready var state_label: Label = $Label
+const STATE_LABLE_COLOR: Dictionary = {
+	State.IDLE: Color.AQUAMARINE,
+	State.RUN: Color.ROYAL_BLUE,
+	State.JUMP: Color.SEA_GREEN,
+	State.FALL: Color.ORANGE
+	
+}
+
+
 var current_state = State.IDLE
 
 
@@ -135,6 +145,7 @@ func _change_state(new_state: State) -> void:
 		return
 		
 	current_state = new_state
+	_update_state_label()
 	_enter_state(current_state)
 	print("state changed to: ", State.keys()[current_state])
 	
@@ -167,6 +178,11 @@ func _play_animation(animation_name: StringName) -> void:
 	
 	animated_sprite_2d.play(animation_name)
 
+
+func _update_state_label() -> void:
+	state_label.text = State.keys()[current_state]
+	state_label.add_theme_color_override("font_color", STATE_LABLE_COLOR[current_state])
+	
 	
 func _apply_air_movement(direction: float, delta: float)->void:
 	var target_speed: float = direction * move_speed
