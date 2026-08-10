@@ -5,7 +5,7 @@
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_tlwt5"]
 radius = 7.0
-height = 33.0
+height = 29.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tlwt5"]
 atlas = ExtResource("2_fj7yv")
@@ -440,17 +440,11 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_isi4y"]
 size = Vector2(150, 40)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_n7akx"]
-size = Vector2(128, 300)
-
 [node name="World" type="Node2D" unique_id=2085653485]
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=721388580]
 position = Vector2(262, 370)
 script = ExtResource("1_fj7yv")
-hurt_back_x = 100.0
-hurt_bounce = -200.0
-hurt_duration = 0.35
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1994952222]
 scale = Vector2(2, 2)
@@ -465,8 +459,7 @@ animation = &"idle"
 offset = Vector2(9.375, -2.445)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]
-zoom = Vector2(1.16, 1.16)
-position_smoothing_enabled = true
+zoom = Vector2(2, 2)
 position_smoothing_speed = 10.0
 
 [node name="Label" type="Label" parent="Player" unique_id=1716237781]
@@ -544,28 +537,18 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=979331332]
+[node name="wall" type="StaticBody2D" parent="." unique_id=979331332]
 position = Vector2(104, 347)
 metadata/_edit_group_ = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1365942166]
-shape = SubResource("RectangleShape2D_n7akx")
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="wall" unique_id=479375777]
+polygon = PackedVector2Array(64, -150, -64, -150, -64, 150, 64, 151, 64, -28, 43, -28, 43, -98, 64, -98)
 
-[node name="ColorRect" type="ColorRect" parent="StaticBody2D/CollisionShape2D" unique_id=1943481438]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -64.0
-offset_top = -150.0
-offset_right = 64.0
-offset_bottom = 150.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Polygon2D" type="Polygon2D" parent="wall" unique_id=1181006110]
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+polygon = PackedVector2Array(-64, 150, -64, -150, 64, -150, 64, -98, 43, -98, 43, -28, 64, -28, 64, 149)
 
-[node name="Spike1" type="Area2D" parent="." unique_id=1035888766]
+[node name="Spike1" type="Area2D" parent="." unique_id=1035888766 groups=["spikes"]]
 position = Vector2(520, 484)
 collision_layer = 2
 metadata/_edit_group_ = true
@@ -577,7 +560,43 @@ polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Spike5" type="Area2D" parent="." unique_id=620746943]
+[node name="Spike2" type="Area2D" parent="." unique_id=214653608 groups=["spikes"]]
+position = Vector2(541, 484)
+collision_layer = 2
+metadata/_edit_group_ = true
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike2" unique_id=312731284]
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Polygon2D" type="Polygon2D" parent="Spike2" unique_id=1162337655]
+color = Color(0.7825999, 0.19296104, 0.14339614, 1)
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Spike3" type="Area2D" parent="." unique_id=1045302740 groups=["spikes"]]
+position = Vector2(562, 484)
+collision_layer = 2
+metadata/_edit_group_ = true
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike3" unique_id=388745538]
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Polygon2D" type="Polygon2D" parent="Spike3" unique_id=587634703]
+color = Color(0.7825999, 0.19296104, 0.14339614, 1)
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Spike4" type="Area2D" parent="." unique_id=1748860333 groups=["spikes"]]
+position = Vector2(583, 484)
+collision_layer = 2
+metadata/_edit_group_ = true
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike4" unique_id=571249044]
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Polygon2D" type="Polygon2D" parent="Spike4" unique_id=1829558506]
+color = Color(0.7825999, 0.19296104, 0.14339614, 1)
+polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="Spike5" type="Area2D" parent="." unique_id=620746943 groups=["spikes"]]
 position = Vector2(630, 402)
 rotation = -1.5707964
 collision_layer = 2
@@ -590,44 +609,50 @@ polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Spike2" type="Area2D" parent="." unique_id=214653608]
-position = Vector2(541, 484)
+[node name="Spike6" type="Area2D" parent="." unique_id=2051397483 groups=["spikes"]]
+position = Vector2(157, 264)
+rotation = -4.712389
 collision_layer = 2
 metadata/_edit_group_ = true
 
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike2" unique_id=312731284]
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike6" unique_id=183859976]
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Polygon2D" type="Polygon2D" parent="Spike2" unique_id=1162337655]
+[node name="Polygon2D" type="Polygon2D" parent="Spike6" unique_id=1984040147]
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Spike3" type="Area2D" parent="." unique_id=1045302740]
-position = Vector2(562, 484)
+[node name="Spike7" type="Area2D" parent="." unique_id=1671726552 groups=["spikes"]]
+position = Vector2(157, 284)
+rotation = -4.712389
 collision_layer = 2
 metadata/_edit_group_ = true
 
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike3" unique_id=388745538]
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike7" unique_id=923956030]
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Polygon2D" type="Polygon2D" parent="Spike3" unique_id=587634703]
+[node name="Polygon2D" type="Polygon2D" parent="Spike7" unique_id=1952936724]
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Spike4" type="Area2D" parent="." unique_id=1748860333]
-position = Vector2(583, 484)
+[node name="Spike8" type="Area2D" parent="." unique_id=320016475 groups=["spikes"]]
+position = Vector2(157, 303)
+rotation = -4.712389
 collision_layer = 2
 metadata/_edit_group_ = true
 
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike4" unique_id=571249044]
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Spike8" unique_id=571309311]
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
-[node name="Polygon2D" type="Polygon2D" parent="Spike4" unique_id=1829558506]
+[node name="Polygon2D" type="Polygon2D" parent="Spike8" unique_id=1162597200]
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
 [connection signal="body_entered" from="Spike1" to="Player" method="_on_spike_1_body_entered"]
-[connection signal="body_entered" from="Spike5" to="Player" method="_on_spike_1_body_entered"]
 [connection signal="body_entered" from="Spike2" to="Player" method="_on_spike_1_body_entered"]
 [connection signal="body_entered" from="Spike3" to="Player" method="_on_spike_1_body_entered"]
 [connection signal="body_entered" from="Spike4" to="Player" method="_on_spike_1_body_entered"]
+[connection signal="body_entered" from="Spike5" to="Player" method="_on_spike_1_body_entered"]
+[connection signal="body_entered" from="Spike6" to="Player" method="_on_spike_1_body_entered"]
+[connection signal="body_entered" from="Spike7" to="Player" method="_on_spike_1_body_entered"]
+[connection signal="body_entered" from="Spike8" to="Player" method="_on_spike_1_body_entered"]

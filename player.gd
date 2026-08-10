@@ -27,6 +27,11 @@ enum State {
 @export var fall_gravity_multiplier:= 1.5
 @export var jump_cut_multiplier:= 0.5
 
+@export_category("Feel")
+@export var jump_buffer_duration:= 0.15
+@export var coyote_duration:= 0.12
+@export var dash_buffer_duration:= 0.35
+
 @export_category("Dash")
 @export var dash_speed:= 850.0
 @export var dash_duration:= 0.18
@@ -38,9 +43,10 @@ enum State {
 @export var wall_jump_push:= 220.0
 
 @export_category("Hurt")
-@export var hurt_back_x:= 50.0
-@export var hurt_bounce:= -100.0
+@export var hurt_back_x:= 150.0
+@export var hurt_bounce:= -200.0
 @export var hurt_duration:= 0.5
+@export var hurt_immunity:= 0.8
 
 
 @onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
@@ -75,6 +81,11 @@ var dash_direction:= 1.0
 var dash_timer:= 0.0
 var facing:= 1.0
 var hurt_timer:= 0.0
+var hurt_immunity_timer:= 0.0
+var last_spike: Area2D
+var jump_buffer_timer:= 0.0
+var coyote_timer:= 0.0
+var dash_buffer_timer:= 0.0
 
 
 
@@ -91,10 +102,14 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _physics_process(delta: float) -> void:
 	var direction = Input.get_axis("move_left", "move_right")
+	_update_timers(delta)
 	_update_facing(direction)
 	_apply_gravity(delta)
 	_process_state(direction, delta)	
 	move_and_slide()
+	
+	hurt_immunity_timer = maxf(hurt_immunity_timer - delta, 0.0)
+	
 		
 		
 	
@@ -123,7 +138,7 @@ func _process_state(direction: float, delta: float) -> void:
 		State.WALLSLIDE:
 			_state_wallslide(direction)
 		State.HURT:
-			_state_hurt(facing, delta)
+			_state_hurt(direction)
 		State.DIE:
 			_state_die(direction)
 			
@@ -137,19 +152,16 @@ func _process_state(direction: float, delta: float) -> void:
 func _state_idle(direction: float, delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, ground_deceleration * delta)
 	
-	
-	
-	if Input.is_action_just_pressed("jump") and is_on_floor():
-		_change_state(State.JUMP)
-		return
-		
-	elif Input.is_action_just_pressed("dash") and is_on_floor():
-		_apply_dash(direction)
-		return
-		
-	elif not is_on_floor():
+	if not is_on_floor():
 		_change_state(State.FALL)	
 		return
+	
+	elif _can_jump():
+		_change_state(State.JUMP)
+		return
+	
+		
+	
 		
 	elif not is_zero_approx(direction):
 		_change_state(State.RUN)
@@ -161,13 +173,15 @@ func _state_run(direction: float, delta: float) -> void:
 	
 	velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * delta)
 	
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+	if _can_dash():
+		_apply_dash(direction)
+		return
+		
+	elif _can_jump():
 		_change_state(State.JUMP)
 		return
 		
-	elif Input.is_action_just_pressed("dash") and is_on_floor():
-		_apply_dash(direction)
-		return
+	
 		
 	elif not is_on_floor():
 		_change_state(State.FALL)	
@@ -191,6 +205,14 @@ func _state_jump(direction: float, delta: float) -> void:
 func _state_fall(direction: float, delta: float) -> void:
 	_apply_air_movement(direction, delta)
 	
+	if _can_jump():
+		_change_state(State.JUMP)
+		return
+	
+	if _can_wall_slide(direction):
+		_change_state(State.WALLSLIDE)
+		return
+	
 	if is_on_floor():
 		if is_zero_approx(direction):
 			_change_state(State.IDLE)
@@ -198,13 +220,11 @@ func _state_fall(direction: float, delta: float) -> void:
 			_change_state(State.RUN)
 		return
 	
-	if _can_wall_slide(direction):
-		_change_state(State.WALLSLIDE)
-		return
+	
 	
 	
 func _state_dash(direction: float, delta:float) -> void:
-	if Input.is_action_just_pressed("jump") and is_on_floor():
+	if _can_jump():
 		_change_state(State.JUMP)
 		return
 	
@@ -250,9 +270,8 @@ func _state_wallslide(direction: float) -> void:
 	velocity.y = minf(velocity.y, wall_slide_speed)
 	
 	
-func _state_hurt(direction: float, delta) -> void:
+func _state_hurt(direction: float) -> void:
 	
-	hurt_timer = maxf(hurt_timer - delta, 0.0)
 	if hurt_timer <= 0.0:
 		if is_on_floor():
 			if is_zero_approx(direction):
@@ -283,7 +302,7 @@ func _change_state(new_state: State) -> void:
 	_enter_state(current_state)
 	print("state changed to: ", State.keys()[current_state])
 	
-
+@onready var spike_areas: Array = get_tree().get_nodes_in_group("spikes")
 
 func _enter_state(new_state:State) -> void:
 	match new_state:
@@ -303,7 +322,14 @@ func _enter_state(new_state:State) -> void:
 		State.HURT:
 			hurt_timer = hurt_duration
 			velocity = Vector2.ZERO
-			velocity = Vector2(-facing * hurt_back_x, hurt_bounce)
+			var knock_direction:= -facing
+			if last_spike != null:
+				knock_direction = signf(global_position.x - last_spike.global_position.x)
+				if knock_direction == 0.0:
+					knock_direction = -facing
+			print("knock_dir: ", knock_direction)
+			velocity = Vector2(knock_direction * hurt_back_x, hurt_bounce)
+			_update_facing(-knock_direction)
 			_play_animation(&"hurt")
 			
 			
@@ -364,3 +390,43 @@ func _on_spike_1_body_entered(body: Node2D) -> void:
 		return
 	_change_state(State.HURT)
 	return
+	
+
+func _check_spike_overlap() -> void:
+	if hurt_immunity_timer > 0.0 or current_state == State.DIE:
+		return
+		
+	for spike in spike_areas:
+		if spike.get_overlapping_bodies().has(self):
+			last_spike = spike
+			hurt_immunity_timer = hurt_immunity
+			_change_state(State.HURT)
+
+
+func _update_timers(delta: float) -> void:
+	_check_spike_overlap()
+	hurt_timer = maxf(hurt_timer - delta, 0.0)	
+	jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
+	coyote_timer = maxf(coyote_timer - delta, 0.0)
+	dash_buffer_timer = maxf(dash_buffer_timer - delta, 0.0)
+	
+	if Input.is_action_just_pressed("dash"):
+		dash_buffer_timer = dash_buffer_duration	
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = jump_buffer_duration
+	if is_on_floor():
+		coyote_timer = coyote_duration
+		
+func _can_jump()  -> bool:
+	if jump_buffer_timer > 0.0 and coyote_timer > 0.0:
+		jump_buffer_timer = 0.0
+		coyote_timer = 0.0
+		return true	
+	return false
+	
+func _can_dash() -> bool:
+	if dash_buffer_timer > 0.0 and coyote_timer > 0.0:
+		dash_buffer_timer = 0.0
+		return true
+	return false
+	
