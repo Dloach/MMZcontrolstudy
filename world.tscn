@@ -183,6 +183,22 @@ region = Rect2(345, 308, 69, 44)
 atlas = ExtResource("2_fj7yv")
 region = Rect2(0, 352, 69, 44)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_e77ka"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(138, 616, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c0wax"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(207, 616, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sedwk"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(276, 616, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_37ykd"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(345, 616, 69, 44)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_bo7i5"]
 atlas = ExtResource("2_fj7yv")
 region = Rect2(0, 44, 69, 44)
@@ -214,6 +230,22 @@ region = Rect2(0, 88, 69, 44)
 [sub_resource type="AtlasTexture" id="AtlasTexture_gggvi"]
 atlas = ExtResource("2_fj7yv")
 region = Rect2(69, 88, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1hvhf"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(276, 440, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_75cpn"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(345, 440, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ct3wn"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(0, 484, 69, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ynm8w"]
+atlas = ExtResource("2_fj7yv")
+region = Rect2(69, 484, 69, 44)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fj7yv"]
 atlas = ExtResource("2_fj7yv")
@@ -393,6 +425,23 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_e77ka")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c0wax")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sedwk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_37ykd")
+}],
+"loop": 0,
+"name": &"lowslide",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_bo7i5")
 }, {
 "duration": 1.0,
@@ -422,6 +471,23 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_1hvhf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_75cpn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ct3wn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ynm8w")
+}],
+"loop": 1,
+"name": &"squat",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_fj7yv")
 }, {
 "duration": 1.0,
@@ -445,6 +511,7 @@ size = Vector2(150, 40)
 [node name="Player" type="CharacterBody2D" parent="." unique_id=721388580]
 position = Vector2(262, 370)
 script = ExtResource("1_fj7yv")
+metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1994952222]
 scale = Vector2(2, 2)
@@ -455,8 +522,8 @@ texture_filter = 1
 position = Vector2(1, -2)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_isi4y")
-animation = &"idle"
-offset = Vector2(9.375, -2.445)
+animation = &"squat"
+offset = Vector2(7.01, -6.78)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]
 zoom = Vector2(2, 2)
@@ -477,6 +544,10 @@ grow_vertical = 2
 text = "Idle"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="StandCheck" type="RayCast2D" parent="Player" unique_id=939235378]
+position = Vector2(0, -13.47)
+target_position = Vector2(0, -16.47)
 
 [node name="ground" type="StaticBody2D" parent="." unique_id=1386042663]
 position = Vector2(548, 494)
@@ -542,11 +613,11 @@ position = Vector2(104, 347)
 metadata/_edit_group_ = true
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="wall" unique_id=479375777]
-polygon = PackedVector2Array(64, -150, -64, -150, -64, 150, 64, 151, 64, -28, 43, -28, 43, -98, 64, -98)
+polygon = PackedVector2Array(64, -150, -64, -150, -64, 112, 64, 112, 64, -28, 43, -28, 43, -98, 64, -98)
 
 [node name="Polygon2D" type="Polygon2D" parent="wall" unique_id=1181006110]
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
-polygon = PackedVector2Array(-64, 150, -64, -150, 64, -150, 64, -98, 43, -98, 43, -28, 64, -28, 64, 149)
+polygon = PackedVector2Array(-64, 112, -64, -150, 64, -150, 64, -98, 43, -98, 43, -28, 64, -28, 64, 112)
 
 [node name="Spike1" type="Area2D" parent="." unique_id=1035888766 groups=["spikes"]]
 position = Vector2(520, 484)

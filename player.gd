@@ -10,6 +10,9 @@ enum State {
 	ATTACK,
 	HURT,
 	DIE,
+	LOWSLIDE,
+	SQUAT,
+	
 }
 
 
@@ -30,13 +33,16 @@ enum State {
 @export_category("Feel")
 @export var jump_buffer_duration:= 0.15
 @export var coyote_duration:= 0.12
-@export var dash_buffer_duration:= 0.35
+@export var dash_buffer_duration:= 0.15
 
 @export_category("Dash")
 @export var dash_speed:= 850.0
 @export var dash_duration:= 0.18
 @export var dash_slide_deceleration:= 2400.0
 @export var dash_stop_speed:= 50.0
+
+@export_category("Lowslide")
+@export var low_slide_speed: = 850.0
 
 @export_category("WallSlide")
 @export var wall_slide_speed:= 100.0
@@ -48,6 +54,9 @@ enum State {
 @export var hurt_duration:= 0.5
 @export var hurt_immunity:= 0.8
 
+@export_category("Squat")
+@export var squat_move_speed:= 220.0
+
 
 @onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
 const ANIMATION_OFFSETS: Dictionary = {
@@ -56,6 +65,8 @@ const ANIMATION_OFFSETS: Dictionary = {
 	&"run": Vector2(7.3, -4.88),
 	&"dash": Vector2(8.82,-4.88),
 	&"wallslide": Vector2(9.375, -2.445),
+	&"lowslide": Vector2(8.4,-5.35),
+	&"squat": Vector2(7.0,-5.0)
 	
 }
 
@@ -70,6 +81,8 @@ const STATE_LABEL_COLOR: Dictionary = {
 	State.WALLSLIDE: Color.DARK_ORCHID,
 	State.HURT: Color.DARK_RED,
 	State.DIE: Color.DIM_GRAY,
+	State.LOWSLIDE: Color.HOT_PINK,
+	State.SQUAT: Color.DARK_KHAKI,
 	
 }
 
@@ -141,6 +154,10 @@ func _process_state(direction: float, delta: float) -> void:
 			_state_hurt(direction)
 		State.DIE:
 			_state_die(direction)
+		State.LOWSLIDE:
+			_state_lowslide(direction, delta)
+		State.SQUAT:
+			_state_squat(direction, delta)
 			
 			
 #===============================================================
@@ -152,6 +169,14 @@ func _process_state(direction: float, delta: float) -> void:
 func _state_idle(direction: float, delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, ground_deceleration * delta)
 	
+	if Input.is_action_just_pressed("move_down") and is_on_floor():
+		_change_state(State.SQUAT)
+		return
+	
+	if _can_dash():
+		_apply_dash(direction)
+		return
+	
 	if not is_on_floor():
 		_change_state(State.FALL)	
 		return
@@ -159,9 +184,6 @@ func _state_idle(direction: float, delta: float) -> void:
 	elif _can_jump():
 		_change_state(State.JUMP)
 		return
-	
-		
-	
 		
 	elif not is_zero_approx(direction):
 		_change_state(State.RUN)
@@ -173,6 +195,9 @@ func _state_run(direction: float, delta: float) -> void:
 	
 	velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * delta)
 	
+	if Input.is_action_just_pressed("move_down") and is_on_floor():
+		_change_state(State.SQUAT)
+		
 	if _can_dash():
 		_apply_dash(direction)
 		return
@@ -180,8 +205,7 @@ func _state_run(direction: float, delta: float) -> void:
 	elif _can_jump():
 		_change_state(State.JUMP)
 		return
-		
-	
+			
 		
 	elif not is_on_floor():
 		_change_state(State.FALL)	
@@ -227,7 +251,11 @@ func _state_dash(direction: float, delta:float) -> void:
 	if _can_jump():
 		_change_state(State.JUMP)
 		return
-	
+		
+	if _can_lowslide():
+		_change_state(State.LOWSLIDE)
+		return
+		
 	if dash_timer > 0.0:
 		velocity.x = dash_direction * dash_speed
 		velocity.y = 0.0	
@@ -282,6 +310,40 @@ func _state_hurt(direction: float) -> void:
 				return
 		else:
 			_change_state(State.FALL)
+			
+			
+func _state_lowslide(direction: float, delta: float) -> void:
+	if dash_timer > 0.0:
+		velocity.x = dash_direction * dash_speed
+		velocity.y = 0.0	
+		dash_timer = maxf(dash_timer - delta, 0.0)
+		return
+		
+	velocity.x = move_toward(velocity.x, 0.0, dash_slide_deceleration * delta)
+	
+	if is_zero_approx(direction):
+		if abs(velocity.x) <= dash_stop_speed:
+			velocity.x = 0.0
+			_change_state(State.IDLE)
+		return
+	elif absf(velocity.x) <= move_speed:
+		_change_state(State.RUN)
+	
+	
+func _state_squat(direction: float, delta: float) -> void:
+	if is_zero_approx(direction):
+		velocity.x = 0.0
+	else:
+		velocity.x = move_toward(velocity.x, direction * squat_move_speed, ground_acceleration * 1 * delta)
+		
+	if Input.is_action_just_released("move_down") and not$StandCheck.is_colliding():
+		if is_zero_approx(direction):
+			_change_state(State.IDLE)
+		else:
+			_change_state(State.RUN)
+			return
+	
+	
 	
 func _state_die(direction: float) -> void:
 	pass
@@ -297,6 +359,13 @@ func _change_state(new_state: State) -> void:
 	if new_state == current_state:
 		return
 		
+	match current_state:
+		State.LOWSLIDE:
+			$CollisionShape2D.shape.height = 29.0
+			$CollisionShape2D.position.y = 0.0
+		State.SQUAT:
+			$CollisionShape2D.shape.height = 29.0
+			$CollisionShape2D.position.y = 0.0
 	current_state = new_state
 	_update_state_label()
 	_enter_state(current_state)
@@ -331,6 +400,17 @@ func _enter_state(new_state:State) -> void:
 			velocity = Vector2(knock_direction * hurt_back_x, hurt_bounce)
 			_update_facing(-knock_direction)
 			_play_animation(&"hurt")
+		State.LOWSLIDE:
+			$CollisionShape2D.shape.height = 16.0
+			$CollisionShape2D.position.y = 13.0
+			_play_animation(&"lowslide")
+		State.SQUAT:
+			$CollisionShape2D.shape.height = 16.0
+			$CollisionShape2D.position.y = 13.0
+			if is_zero_approx(velocity.x):
+				_show_animation_frame(&"squat", 0)
+			else:
+				_play_animation(&"squat")
 			
 			
 func _update_facing(direction: float) -> void:
@@ -370,6 +450,12 @@ func _play_animation(animation_name: StringName) -> void:
 	animated_sprite_2d.offset = ANIMATION_OFFSETS.get(animation_name, Vector2.ZERO)
 	
 	animated_sprite_2d.play(animation_name)
+	
+func _show_animation_frame(animation_name: StringName, frame_index: int ) -> void:
+	animated_sprite_2d.offset = ANIMATION_OFFSETS.get(animation_name, Vector2.ZERO)
+	animated_sprite_2d.play(animation_name)
+	animated_sprite_2d.pause()
+	animated_sprite_2d.frame = frame_index
 
 
 func _update_state_label() -> void:
@@ -429,4 +515,13 @@ func _can_dash() -> bool:
 		dash_buffer_timer = 0.0
 		return true
 	return false
+	
+func _can_lowslide() -> bool:
+	if is_on_floor() and Input.is_action_just_pressed("move_down"):
+		return true
+	return false	
+		
+
+
+	
 	
