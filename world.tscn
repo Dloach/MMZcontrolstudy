@@ -506,6 +506,9 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_isi4y"]
 size = Vector2(150, 40)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_837k6"]
+size = Vector2(50, 50)
+
 [node name="World" type="Node2D" unique_id=2085653485]
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=721388580]
@@ -718,3 +721,66 @@ polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 [node name="Polygon2D" type="Polygon2D" parent="Spike8" unique_id=1162597200]
 color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1425314606]
+position = Vector2(1217, 277)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1482208227]
+shape = SubResource("RectangleShape2D_837k6")
+
+[node name="ColorRect" type="ColorRect" parent="StaticBody2D" unique_id=1864502991]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="." unique_id=614088131]
+position = Vector2(1369, 277)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2" unique_id=558299184]
+shape = SubResource("RectangleShape2D_837k6")
+
+[node name="ColorRect" type="ColorRect" parent="StaticBody2D2" unique_id=2096830530]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="." unique_id=702815288]
+position = Vector2(1602, 277)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3" unique_id=677956843]
+shape = SubResource("RectangleShape2D_837k6")
+
+[node name="ColorRect" type="ColorRect" parent="StaticBody2D3" unique_id=1531058350]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5254902, 0.3254902, 0.078431375, 1)

@@ -26,6 +26,8 @@ enum State {
 	LOWSLIDE,
 	# 蹲下或蹲着移动。
 	SQUAT,
+	# 蹲下受伤状态。
+	SQUATHURT,
 	
 }
 
@@ -230,6 +232,8 @@ func _process_state(direction: float, delta: float) -> void:
 			_state_lowslide(direction, delta)
 		State.SQUAT:
 			_state_squat(direction, delta)
+		State.SQUATHURT:
+			_state_squathurt()
 			
 			
 #===================================================================================================
@@ -506,7 +510,10 @@ func _state_squat(direction: float, delta: float) -> void:
 		_change_state(State.RUN)
 		return
 	
-	
+func _state_squathurt() -> void:
+	pass
+
+
 	
 # DIE：死亡状态目前只是占位，尚未实现行为。
 func _state_die(direction: float) -> void:
