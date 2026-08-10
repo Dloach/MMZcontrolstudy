@@ -7,6 +7,9 @@ enum State {
 	FALL,
 	DASH,
 	WALLSLIDE,
+	ATTACK,
+	HURT,
+	DIE,
 }
 
 
@@ -34,6 +37,10 @@ enum State {
 @export var wall_slide_speed:= 100.0
 @export var wall_jump_push:= 220.0
 
+@export_category("Hurt")
+@export var hurt_back_x:= 50.0
+@export var hurt_bounce:= -100.0
+@export var hurt_duration:= 0.5
 
 
 @onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
@@ -55,14 +62,19 @@ const STATE_LABEL_COLOR: Dictionary = {
 	State.FALL: Color.ORANGE,
 	State.DASH: Color.YELLOW,
 	State.WALLSLIDE: Color.DARK_ORCHID,
+	State.HURT: Color.DARK_RED,
+	State.DIE: Color.DIM_GRAY,
 	
 }
+
+
 
 
 var current_state = State.IDLE
 var dash_direction:= 1.0
 var dash_timer:= 0.0
 var facing:= 1.0
+var hurt_timer:= 0.0
 
 
 
@@ -109,8 +121,11 @@ func _process_state(direction: float, delta: float) -> void:
 		State.DASH:
 			_state_dash(direction, delta)
 		State.WALLSLIDE:
-			_state_wallslide(direction, delta)
-		
+			_state_wallslide(direction)
+		State.HURT:
+			_state_hurt(facing, delta)
+		State.DIE:
+			_state_die(direction)
 			
 			
 #===============================================================
@@ -213,7 +228,7 @@ func _state_dash(direction: float, delta:float) -> void:
 		_change_state(State.RUN)		
 
 
-func _state_wallslide(direction: float, delta: float) -> void:	
+func _state_wallslide(direction: float) -> void:	
 	if is_on_floor():
 		if is_zero_approx(direction):
 			_change_state(State.IDLE)
@@ -233,8 +248,24 @@ func _state_wallslide(direction: float, delta: float) -> void:
 	velocity.x = direction * move_speed
 	
 	velocity.y = minf(velocity.y, wall_slide_speed)
-
-
+	
+	
+func _state_hurt(direction: float, delta) -> void:
+	
+	hurt_timer = maxf(hurt_timer - delta, 0.0)
+	if hurt_timer <= 0.0:
+		if is_on_floor():
+			if is_zero_approx(direction):
+				_change_state(State.IDLE)
+				return
+			else:
+				_change_state(State.RUN)
+				return
+		else:
+			_change_state(State.FALL)
+	
+func _state_die(direction: float) -> void:
+	pass
 
 
 
@@ -269,6 +300,11 @@ func _enter_state(new_state:State) -> void:
 			_play_animation(&"dash")
 		State.WALLSLIDE:
 			_play_animation(&"wallslide")
+		State.HURT:
+			hurt_timer = hurt_duration
+			velocity = Vector2.ZERO
+			velocity = Vector2(-facing * hurt_back_x, hurt_bounce)
+			_play_animation(&"hurt")
 			
 			
 func _update_facing(direction: float) -> void:
@@ -321,5 +357,10 @@ func _apply_air_movement(direction: float, delta: float)->void:
 	velocity.x = move_toward(velocity.x, target_speed, air_acceleration *delta)
 	
 	
-	
-			
+
+
+func _on_spike_1_body_entered(body: Node2D) -> void:
+	if body != self:
+		return
+	_change_state(State.HURT)
+	return
