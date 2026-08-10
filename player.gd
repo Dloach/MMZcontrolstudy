@@ -110,6 +110,7 @@ var dash_buffer_timer:= 0.0
 func _ready() -> void:
 	_enter_state(State.IDLE)
 	_update_state_label()
+	get_tree().debug_collisions_hint = true
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -169,7 +170,7 @@ func _process_state(direction: float, delta: float) -> void:
 func _state_idle(direction: float, delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, ground_deceleration * delta)
 	
-	if Input.is_action_just_pressed("move_down") and is_on_floor():
+	if _can_lowslide():
 		_change_state(State.SQUAT)
 		return
 	
@@ -195,7 +196,7 @@ func _state_run(direction: float, delta: float) -> void:
 	
 	velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * delta)
 	
-	if Input.is_action_just_pressed("move_down") and is_on_floor():
+	if _can_lowslide():
 		_change_state(State.SQUAT)
 		
 	if _can_dash():
@@ -228,6 +229,8 @@ func _state_jump(direction: float, delta: float) -> void:
 		
 func _state_fall(direction: float, delta: float) -> void:
 	_apply_air_movement(direction, delta)
+	if _can_lowslide():
+		_change_state(State.SQUAT)
 	
 	if _can_jump():
 		_change_state(State.JUMP)
@@ -332,10 +335,15 @@ func _state_lowslide(direction: float, delta: float) -> void:
 	
 func _state_squat(direction: float, delta: float) -> void:
 	if is_zero_approx(direction):
+		_show_animation_frame(&"squat", 0)
 		velocity.x = 0.0
 	else:
+		if not animated_sprite_2d.is_playing():
+			_play_animation(&"squat")
 		velocity.x = move_toward(velocity.x, direction * squat_move_speed, ground_acceleration * 1 * delta)
-		
+	
+	#print("StandCheck: ",$StandCheck.is_colliding())
+	print("StandCheck hit: ", $StandCheck.get_collider())   
 	if Input.is_action_just_released("move_down") and not$StandCheck.is_colliding():
 		if is_zero_approx(direction):
 			_change_state(State.IDLE)
@@ -409,6 +417,7 @@ func _enter_state(new_state:State) -> void:
 			$CollisionShape2D.position.y = 13.0
 			if is_zero_approx(velocity.x):
 				_show_animation_frame(&"squat", 0)
+				return
 			else:
 				_play_animation(&"squat")
 			

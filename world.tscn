@@ -547,7 +547,8 @@ vertical_alignment = 1
 
 [node name="StandCheck" type="RayCast2D" parent="Player" unique_id=939235378]
 position = Vector2(0, -13.47)
-target_position = Vector2(0, -16.47)
+target_position = Vector2(0, -7)
+collide_with_areas = true
 
 [node name="ground" type="StaticBody2D" parent="." unique_id=1386042663]
 position = Vector2(548, 494)
