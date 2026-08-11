@@ -345,7 +345,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack2",
-"speed": 5.0
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -371,7 +371,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack3",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -605,7 +605,7 @@ texture_filter = 1
 position = Vector2(1, -2)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_isi4y")
-animation = &"attack2"
+animation = &"attack3"
 offset = Vector2(7, -4)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]

@@ -104,7 +104,7 @@ enum State {
 
 @export_category("Attack")
 # 攻击按键缓存
-@export var attack_buffer:= 1.5
+@export var attack_buffer:= 0.15
 
 
 # @onready 表示等节点进入场景树、子节点已经可用后再取得引用。
@@ -547,32 +547,28 @@ func _state_attack(direction: float) -> void:
 	velocity.x = 0.0
 	print("attack_step: ", attack_step)
 	print("attack_frame: ", animated_sprite_2d.frame)
-	print("attack_buffer: ", attack_buffer)
+	print("attack_buffer_timer: ", attack_buffer_timer)
+	print("animate is playing: ", animated_sprite_2d.is_playing())
 	if _is_combo_window_open():
+		
+		attack_buffer_timer = 0.0
 		if _can_attack():
 			attack_step += 1
 			match attack_step:
 				2:
 					animated_sprite_2d.play("attack2")
 				3:
-					animated_sprite_2d.play("attack3")
-				4:
-					attack_step = 0
-					return
+					animated_sprite_2d.play("attack3")				
+			return	
+		elif animated_sprite_2d.is_playing():
 			return	
 		else:
-			if animated_sprite_2d.is_playing():
-				return	
-			elif is_on_floor():
-				if is_zero_approx(direction):
-					_change_state(State.IDLE)
-					return
-				else:
-					_change_state(State.RUN)
-					return
-			else:
-				_change_state(State.FALL)
-		
+			_exit_animation(direction)
+	elif animated_sprite_2d.is_playing():						
+		return
+	else:
+		_exit_animation(direction)
+		return	
 		
 	
 		
@@ -847,3 +843,13 @@ func _is_combo_window_open() -> bool:
 	
 	return false
 	
+func _exit_animation(direction: float) -> void:
+	if is_on_floor():
+		if is_zero_approx(direction):
+			_change_state(State.IDLE)
+			return
+		else:
+			_change_state(State.RUN)
+			return
+	else:
+		_change_state(State.FALL)
