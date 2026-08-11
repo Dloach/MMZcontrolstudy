@@ -112,20 +112,40 @@ enum State {
 # 不同动画素材的视觉中心不同，因此播放动画前应用各自的 offset。
 # &"idle" 是 StringName，适合反复作为动画名和字典键使用。
 const ANIMATION_OFFSETS: Dictionary = {
-	&"idle": Vector2(7.23, -5.435),
-	&"jump": Vector2(5.9, -2.32),
-	&"run": Vector2(7.3, -4.88),
-	&"dash": Vector2(8.82,-4.88),
-	&"wallslide": Vector2(9.375, -2.445),
-	&"lowslide": Vector2(8.4,-5.35),
+	&"idle": Vector2(7.23, -5.0),
+	&"jump": Vector2(5.9, -2.0),
+	&"run": Vector2(7.3, -5.0),
+	&"dash": Vector2(8.82,-5.0),
+	&"wallslide": Vector2(10.0, -3.0),
+	&"lowslide": Vector2(8.4,-5.0),
 	&"squat": Vector2(7.0,-5.0),
-	&"hurt": Vector2(4.0,-4.0),
-	&"attack1": Vector2(7.0, -4.0),
-	&"attack2": Vector2(7.0, -4.0),
-	&"attack3": Vector2(7.0, -4.0),
+	&"hurt": Vector2(4.0,-5.0),
+	&"attack1": Vector2(7.0, -5.0),
+	&"attack2": Vector2(7.0, -5.00),
+	&"attack3": Vector2(7.0, -5.0),
 	
 }
 
+
+@onready var hitbosx_collision: CollisionShape2D = $Hitbox/CollisionShape2D
+
+const ATTACK_KNOCK_BACK_SPEED: Dictionary = {
+	1: 80.0,
+	2: -80.0,
+	3: 480.0,	
+}
+
+const ATTACK_HIT_FRAMES: Dictionary = {
+	&"attack1": 4,
+	&"attack2": 1,
+	&"attack3": 2,
+}
+
+const HITBOX_SIZES: Dictionary = {
+	&"attack1": 55,
+	&"attack2": 55,
+	&"attack3": 95,
+}
 
 # 用于在角色头顶显示当前状态，方便学习和调试状态切换。
 @onready var state_label: Label = $Label
@@ -175,7 +195,10 @@ var attack_buffer_timer:= 0.0
 var combo_window_timer:= 0.0
 # 连段序号
 var attack_step: int = 0
+# 连段序列判断，有攻击排队说明本次动画结束后会播放后续攻击动画
 var next_attack_queue:= false
+# 收集被击中的对象
+var _hit_targets: Array = []
 
 
 
@@ -188,6 +211,7 @@ var next_attack_queue:= false
 func _ready() -> void:
 	# current_state 虽然已经是 IDLE，但仍需执行一次 IDLE 的进入行为，
 	# 这样开局就会播放正确动画。
+	$Hitbox.monitoring = false
 	_enter_state(State.IDLE)
 	_update_state_label()
 
@@ -201,12 +225,13 @@ func _physics_process(delta: float) -> void:
 	_update_timers(delta)
 	# 朝向只由水平输入更新；没有输入时保持原朝向。
 	# 增加条件，防止滑墙时反方向的操作显示错误动画朝向
-	if current_state != State.WALLSLIDE:
+	if current_state != State.WALLSLIDE and current_state != State.ATTACK:
 		_update_facing(direction)
 	# 所有状态共用重力，状态函数只处理各自额外的行为。
 	_apply_gravity(delta)
 	# 根据 current_state 执行一个状态函数。
 	_process_state(direction, delta)	
+	print("Hitbox monitoring: ", $Hitbox.monitoring)
 	# CharacterBody2D 真正根据 velocity 移动并更新地面、墙面碰撞信息。
 	move_and_slide()
 	
@@ -403,8 +428,6 @@ func _state_dash(direction: float, delta:float) -> void:
 		_change_state(State.FALL)
 		return
 	
-	
-	
 	# 没有方向输入时，等速度足够低才进入 IDLE。
 	if is_zero_approx(direction):
 		if abs(velocity.x) <= dash_stop_speed:
@@ -464,14 +487,11 @@ func _state_hurt(direction: float) -> void:
 func _state_lowslide(direction: float, delta: float) -> void:
 	# 从 DASH 转入时 dash_timer 不会重置，因此高速阶段可以自然接续。
 	if dash_timer > 0.0:
-		velocity.x = dash_direction * dash_speed
-		velocity.y = 0.0	
+		velocity.x = dash_direction * dash_speed		
 		dash_timer = maxf(dash_timer - delta, 0.0)
 		return
-		
 	# 高速时间结束后逐渐减速。
 	velocity.x = move_toward(velocity.x, 0.0, dash_slide_deceleration * delta)
-	
 	if not is_on_floor():
 		_change_state(State.FALL)
 		return
@@ -482,7 +502,7 @@ func _state_lowslide(direction: float, delta: float) -> void:
 	var must_stay_squat: bool = (
 		Input.is_action_pressed("move_down") or $StandCheck.is_colliding()
 	)
-	
+	print("move_down_pressed: ", Input.is_action_pressed("move_down")," racast2d is colliding: ", $StandCheck.is_colliding())
 	# 没有方向输入时，等待速度降到停止阈值。
 	if is_zero_approx(direction):
 		if abs(velocity.x) <= dash_stop_speed:
@@ -545,10 +565,8 @@ func _state_squathurt() -> void:
 
 func _state_attack(direction: float) -> void:
 	velocity.x = 0.0
-	print("attack_step: ", attack_step)
-	print("attack_frame: ", animated_sprite_2d.frame)
-	print("attack_buffer_timer: ", attack_buffer_timer)
-	print("animate is playing: ", animated_sprite_2d.is_playing())
+	_check_hit_frame()
+			
 	if _is_combo_window_open() and Input.is_action_just_pressed("attack"):
 		next_attack_queue = true
 		#attack_buffer_timer = attack_buffer
@@ -558,13 +576,15 @@ func _state_attack(direction: float) -> void:
 		return
 		
 	if next_attack_queue and attack_step < 3:
+		$Hitbox.monitoring = false
 		next_attack_queue = false
+		_hit_targets.clear()
 		attack_step += 1
 		match attack_step:
 			2:
 				animated_sprite_2d.play("attack2")
 				return
-			3:
+			3:	
 				animated_sprite_2d.play("attack3")
 				return
 		return
@@ -641,13 +661,14 @@ func _enter_state(new_state:State) -> void:
 			_update_facing(-knock_direction)
 			_play_animation(&"hurt")
 		State.LOWSLIDE:
+			velocity.y = 0.0	
 			$CollisionShape2D.shape.height = 16.0
-			$CollisionShape2D.position.y = 13.0
+			$CollisionShape2D.position.y = 14.0
 			_play_animation(&"lowslide")
 		State.SQUAT:
 			# SQUAT 与 LOWSLIDE 使用相同的矮碰撞体尺寸。
 			$CollisionShape2D.shape.height = 16.0
-			$CollisionShape2D.position.y = 13.0
+			$CollisionShape2D.position.y = 14.0
 			# 静止进入蹲伏时只显示指定帧；带速度进入时播放完整动画。
 			if is_zero_approx(velocity.x):
 				_show_animation_frame(&"squat", 0)
@@ -655,8 +676,11 @@ func _enter_state(new_state:State) -> void:
 			else:
 				_play_animation(&"squat")
 		State.ATTACK:
+			_check_hit_frame()
+			_hit_targets.clear()
 			attack_step = 1
 			attack_buffer_timer = attack_buffer
+			next_attack_queue = false
 			_play_animation(&"attack1")
 			
 			
@@ -664,11 +688,11 @@ func _exit_state(old_state: State, new_state: State) -> void:
 	match old_state:
 		State.LOWSLIDE:
 			# 恢复站立碰撞体。
-			$CollisionShape2D.shape.height = 29.0
+			$CollisionShape2D.shape.height = 30.0
 			$CollisionShape2D.position.y = 0.0
 		State.SQUAT:
 			# 恢复站立碰撞体。
-			$CollisionShape2D.shape.height = 29.0
+			$CollisionShape2D.shape.height = 30.0
 			$CollisionShape2D.position.y = 0.0
 		State.DASH:
 			if new_state == State.JUMP:
@@ -690,9 +714,11 @@ func _update_facing(direction: float) -> void:
 		# x 缩放为负数会水平翻转 AnimatedSprite2D。
 		animated_sprite_2d.scale.x = -2.0
 		facing = -1.0
+		$Hitbox.scale.x = -1.0
 	else:
 		animated_sprite_2d.scale.x = 2.0
 		facing = 1.0
+		$Hitbox.scale.x = 1.0
 	
 # 确定本次冲刺方向，然后统一进入 DASH。
 func _apply_dash(direction: float) -> void:
@@ -848,6 +874,16 @@ func _is_combo_window_open() -> bool:
 	return false
 	
 func _exit_animation(direction: float) -> void:
+	$Hitbox.monitoring = false
+	_hit_targets.clear()
+	
+	var rectangle_shape := ($Hitbox/CollisionShape2D.shape as RectangleShape2D)
+	var hitbox_width: float = HITBOX_SIZES[&"attack1"]
+	
+	var new_size: Vector2 = rectangle_shape.size
+	new_size.x = hitbox_width
+	rectangle_shape.size = new_size
+	
 	if is_on_floor():
 		if is_zero_approx(direction):
 			_change_state(State.IDLE)
@@ -857,3 +893,35 @@ func _exit_animation(direction: float) -> void:
 			return
 	else:
 		_change_state(State.FALL)
+
+
+func _on_hitbox_body_entered(body: Node2D) -> void:
+	if body == self:
+		return	
+	if body not in _hit_targets:
+		_hit_targets.append(body)
+		if body.has_method("take_damage"):
+			body.take_damage(1, signf(body.global_position.x - global_position.x), ATTACK_KNOCK_BACK_SPEED.get(attack_step))
+			print(ATTACK_KNOCK_BACK_SPEED.get(attack_step))
+
+
+func _check_hit_frame() -> void:
+	var animation_name: StringName = animated_sprite_2d.animation
+	
+	if not ATTACK_HIT_FRAMES.has(animation_name):
+		$Hitbox.monitoring = false
+		return
+	
+	var rectangle_shape := ($Hitbox/CollisionShape2D.shape as RectangleShape2D)
+	if rectangle_shape == null:
+		return
+		
+	var hit_frame: int = ATTACK_HIT_FRAMES[animation_name]
+	var hitbox_width: float = HITBOX_SIZES[animation_name]
+	
+	var new_size: Vector2 = rectangle_shape.size
+	new_size.x = hitbox_width
+	rectangle_shape.size = new_size
+	
+	$Hitbox.monitoring = animated_sprite_2d.frame >= hit_frame
+	

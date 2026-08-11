@@ -2,10 +2,13 @@
 
 [ext_resource type="Script" uid="uid://cnbmeww70y8qa" path="res://player.gd" id="1_fj7yv"]
 [ext_resource type="Texture2D" uid="uid://bm8url0j6usyc" path="res://assets/Warrior_SheetnoEffect.png" id="2_fj7yv"]
+[ext_resource type="Script" uid="uid://d38raugleaaa1" path="res://dummy.gd" id="3_tlwt5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n7akx"]
+size = Vector2(95, 72)
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_tlwt5"]
 radius = 7.0
-height = 29.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_aqk2v"]
 atlas = ExtResource("2_fj7yv")
@@ -582,12 +585,30 @@ size = Vector2(150, 40)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_837k6"]
 size = Vector2(50, 50)
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_isi4y"]
+radius = 15.0
+height = 80.0
+
 [node name="World" type="Node2D" unique_id=2085653485]
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=992653778]
+offset_left = -73.0
+offset_top = -23.0
+offset_right = 732.0
+offset_bottom = 542.0
+color = Color(0.2883248, 0.5420878, 0.58941036, 1)
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=721388580]
 position = Vector2(261, 440)
 script = ExtResource("1_fj7yv")
 metadata/_edit_group_ = true
+
+[node name="Hitbox" type="Area2D" parent="Player" unique_id=1778125030]
+collision_layer = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hitbox" unique_id=1184361917]
+position = Vector2(40, -4)
+shape = SubResource("RectangleShape2D_n7akx")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1994952222]
 scale = Vector2(2, 2)
@@ -598,7 +619,9 @@ texture_filter = 1
 position = Vector2(1, -2)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_isi4y")
-animation = &"attack1"
+animation = &"attack3"
+frame = 3
+frame_progress = 0.06297271
 offset = Vector2(7, -4)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]
@@ -625,7 +648,7 @@ target_position = Vector2(0, -30)
 collide_with_areas = true
 
 [node name="ground" type="StaticBody2D" parent="." unique_id=1386042663]
-position = Vector2(548, 494)
+position = Vector2(552, 496)
 metadata/_edit_group_ = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ground" unique_id=560418641]
@@ -688,14 +711,14 @@ position = Vector2(104, 347)
 metadata/_edit_group_ = true
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="wall" unique_id=479375777]
-polygon = PackedVector2Array(64, -150, -64, -150, -64, 112, 64, 112, 64, -28, 43, -28, 43, -98, 64, -98)
+polygon = PackedVector2Array(64, -147, -64, -147, -64, 109, 64, 109, 64, -28, 43, -28, 43, -98, 64, -98)
 
 [node name="Polygon2D" type="Polygon2D" parent="wall" unique_id=1181006110]
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
-polygon = PackedVector2Array(-64, 112, -64, -150, 64, -150, 64, -98, 43, -98, 43, -28, 64, -28, 64, 112)
+polygon = PackedVector2Array(-64, 109, -64, -147, 64, -147, 64, -98, 43, -98, 43, -28, 64, -28, 64, 109)
 
 [node name="Spike1" type="Area2D" parent="." unique_id=1035888766 groups=["spikes"]]
-position = Vector2(520, 484)
+position = Vector2(520, 488)
 collision_layer = 2
 metadata/_edit_group_ = true
 
@@ -707,7 +730,7 @@ color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
 [node name="Spike2" type="Area2D" parent="." unique_id=214653608 groups=["spikes"]]
-position = Vector2(541, 484)
+position = Vector2(541, 488)
 collision_layer = 2
 metadata/_edit_group_ = true
 
@@ -719,7 +742,7 @@ color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
 [node name="Spike3" type="Area2D" parent="." unique_id=1045302740 groups=["spikes"]]
-position = Vector2(562, 484)
+position = Vector2(562, 488)
 collision_layer = 2
 metadata/_edit_group_ = true
 
@@ -731,7 +754,7 @@ color = Color(0.7825999, 0.19296104, 0.14339614, 1)
 polygon = PackedVector2Array(0, -10, -10, 10, 10, 10)
 
 [node name="Spike4" type="Area2D" parent="." unique_id=1748860333 groups=["spikes"]]
-position = Vector2(583, 484)
+position = Vector2(583, 488)
 collision_layer = 2
 metadata/_edit_group_ = true
 
@@ -856,3 +879,27 @@ offset_bottom = 25.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.5254902, 0.3254902, 0.078431375, 1)
+
+[node name="Dummy" type="CharacterBody2D" parent="." unique_id=1155559470]
+position = Vector2(-144, 448)
+script = ExtResource("3_tlwt5")
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Dummy" unique_id=1501765420]
+shape = SubResource("CapsuleShape2D_isi4y")
+
+[node name="ColorRect" type="ColorRect" parent="Dummy" unique_id=611354314]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -15.0
+offset_top = -40.0
+offset_right = 15.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.54449344, 0.38073358, 0.5990192, 1)
+
+[connection signal="body_entered" from="Player/Hitbox" to="Player" method="_on_hitbox_body_entered"]
