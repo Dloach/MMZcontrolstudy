@@ -7,10 +7,6 @@
 radius = 7.0
 height = 29.0
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_tlwt5"]
-atlas = ExtResource("2_fj7yv")
-region = Rect2(138, 88, 69, 44)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_aqk2v"]
 atlas = ExtResource("2_fj7yv")
 region = Rect2(207, 88, 69, 44)
@@ -303,9 +299,6 @@ region = Rect2(138, 440, 69, 44)
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_tlwt5")
-}, {
-"duration": 1.0,
 "texture": SubResource("AtlasTexture_aqk2v")
 }, {
 "duration": 1.0,
@@ -328,7 +321,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack1",
-"speed": 12.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -345,7 +338,7 @@ animations = [{
 }],
 "loop": 0,
 "name": &"attack2",
-"speed": 6.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -605,7 +598,7 @@ texture_filter = 1
 position = Vector2(1, -2)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_isi4y")
-animation = &"attack3"
+animation = &"attack1"
 offset = Vector2(7, -4)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1217221137]

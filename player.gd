@@ -549,27 +549,28 @@ func _state_attack(direction: float) -> void:
 	print("attack_frame: ", animated_sprite_2d.frame)
 	print("attack_buffer_timer: ", attack_buffer_timer)
 	print("animate is playing: ", animated_sprite_2d.is_playing())
-	if _is_combo_window_open():
-		
-		attack_buffer_timer = 0.0
-		if _can_attack():
-			attack_step += 1
-			match attack_step:
-				2:
-					animated_sprite_2d.play("attack2")
-				3:
-					animated_sprite_2d.play("attack3")				
-			return	
-		elif animated_sprite_2d.is_playing():
-			return	
-		else:
-			_exit_animation(direction)
-	elif animated_sprite_2d.is_playing():						
+	if _is_combo_window_open() and Input.is_action_just_pressed("attack"):
+		next_attack_queue = true
+		#attack_buffer_timer = attack_buffer
+	attack_buffer_timer = 0.0
+	
+	if animated_sprite_2d.is_playing():
 		return
-	else:
-		_exit_animation(direction)
-		return	
 		
+	if next_attack_queue and attack_step < 3:
+		next_attack_queue = false
+		attack_step += 1
+		match attack_step:
+			2:
+				animated_sprite_2d.play("attack2")
+				return
+			3:
+				animated_sprite_2d.play("attack3")
+				return
+		return
+				
+	else:
+		_exit_animation(direction)	
 	
 		
 	
@@ -655,6 +656,7 @@ func _enter_state(new_state:State) -> void:
 				_play_animation(&"squat")
 		State.ATTACK:
 			attack_step = 1
+			attack_buffer_timer = attack_buffer
 			_play_animation(&"attack1")
 			
 			
@@ -824,18 +826,20 @@ func _can_lowslide() -> bool:
 		
 
 func _can_attack() -> bool:
-	if (Input.is_action_just_pressed("attack") 
-	and is_on_floor() 
-	and (current_state == State.IDLE or current_state == State.RUN or current_state == State.ATTACK)
-	and attack_buffer > 0.0
-	):
+	if Input.is_action_just_pressed("attack"):
+		attack_buffer_timer = attack_buffer
+		if (is_on_floor() 
+			and (current_state == State.IDLE or current_state == State.RUN or current_state == State.ATTACK)
+			and attack_buffer > 0.0
+			):
+			attack_buffer_timer = 0.0
 		return true
 	return false
 
 func _is_combo_window_open() -> bool:
 	match attack_step:
 		1:
-			return animated_sprite_2d.frame >5
+			return animated_sprite_2d.frame > 3
 		2:
 			return animated_sprite_2d.frame > 1
 		3:
