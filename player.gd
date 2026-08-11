@@ -36,11 +36,11 @@ enum State {
 # @export_category 只负责在 Inspector 中给导出变量分组，不参与游戏逻辑。
 @export_category("Movement")
 # 正常地面移动所能达到的最大水平速度。
-@export var move_speed:= 300.0
+@export var move_speed:= 400.0
 # 地面上接近目标速度的速率；越大，起步和转向越快。
-@export var ground_acceleration:= 1800.0
+@export var ground_acceleration:= 2600.0
 # 松开方向后，水平速度接近 0 的速率。
-@export var ground_deceleration:= 2200.0
+@export var ground_deceleration:= 2800.0
 # 每秒施加的基础重力加速度。
 @export var gravity:= 980.0
 
@@ -49,13 +49,15 @@ enum State {
 # Godot 2D 中 y 轴向下为正，因此负数代表向上的起跳速度。
 @export var jump_velocity:= -500.0
 # 空中调整水平速度的速率。
-@export var air_acceleration:= 900.0
+@export var air_acceleration:= 1600.0
 # 限制最大向下速度，避免角色无限加速。
 @export var max_fall_speed:= 1400.0
 # 下落时的重力倍率，让上升和下降可以拥有不同手感。
 @export var fall_gravity_multiplier:= 1.5
 # 提前松开跳跃键时保留多少向上速度；数值越小，短跳越明显。
 @export var jump_cut_multiplier:= 0.5
+# 冲跳减速放缓，提升冲调速度感和滑翔距离
+@export var dash_jump_decleration:= 350.0
 
 
 @export_category("Feel")
@@ -69,7 +71,7 @@ enum State {
 
 @export_category("Dash")
 # 冲刺高速阶段的水平速度。
-@export var dash_speed:= 850.0
+@export var dash_speed:= 950.0
 # 冲刺保持恒定高速的时长，单位为秒。
 @export var dash_duration:= 0.18
 # 高速阶段结束后的水平减速度。
@@ -82,7 +84,7 @@ enum State {
 # 滑墙时允许的最大向下速度。
 @export var wall_slide_speed:= 100.0
 # 墙跳时离开墙面的水平推力。
-@export var wall_jump_push:= 220.0
+@export var wall_jump_push:= 400.0
 
 
 @export_category("Hurt")
@@ -156,6 +158,8 @@ var last_spike: Area2D
 var jump_buffer_timer:= 0.0
 var coyote_timer:= 0.0
 var dash_buffer_timer:= 0.0
+
+var air_speed_changer:= 0.0
 
 
 
@@ -607,6 +611,14 @@ func _exit_state(old_state: State, new_state: State) -> void:
 			# 恢复站立碰撞体。
 			$CollisionShape2D.shape.height = 29.0
 			$CollisionShape2D.position.y = 0.0
+		State.DASH:
+			if new_state == State.JUMP:
+				air_speed_changer = dash_jump_decleration
+			else:
+				air_speed_changer = air_acceleration
+		State.FALL:
+			air_speed_changer = air_acceleration
+		
 			
 			
 # 根据水平输入更新视觉朝向和 facing 记录。
@@ -688,8 +700,8 @@ func _apply_air_movement(direction: float, delta: float)->void:
 	var target_speed: float = direction * move_speed
 	
 	# 空中使用 air_acceleration，因此手感可以与地面加速度分开调节。
-	velocity.x = move_toward(velocity.x, target_speed, air_acceleration *delta)
-	
+	velocity.x = move_toward(velocity.x, target_speed, air_speed_changer * delta)
+	print("air_speed_changer: ", air_speed_changer)
 	
 # 每个物理帧主动检查玩家是否仍与任意尖刺重叠。
 # 这样角色在持续接触尖刺时，无敌时间结束后仍能再次受伤。
