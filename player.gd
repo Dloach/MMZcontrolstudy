@@ -102,6 +102,10 @@ enum State {
 # 蹲着移动时的目标水平速度。
 @export var squat_move_speed:= 220.0
 
+@export_category("Attack")
+# 攻击按键缓存
+@export var attack_buffer:= 1.5
+
 
 # @onready 表示等节点进入场景树、子节点已经可用后再取得引用。
 @onready var animated_sprite_2d: AnimatedSprite2D = $AnimatedSprite2D
@@ -115,7 +119,10 @@ const ANIMATION_OFFSETS: Dictionary = {
 	&"wallslide": Vector2(9.375, -2.445),
 	&"lowslide": Vector2(8.4,-5.35),
 	&"squat": Vector2(7.0,-5.0),
-	&"hurt": Vector2(4.0,-4.0)
+	&"hurt": Vector2(4.0,-4.0),
+	&"attack1": Vector2(7.0, -4.0),
+	&"attack2": Vector2(7.0, -4.0),
+	&"attack3": Vector2(7.0, -4.0),
 	
 }
 
@@ -134,6 +141,7 @@ const STATE_LABEL_COLOR: Dictionary = {
 	State.DIE: Color.DIM_GRAY,
 	State.LOWSLIDE: Color.HOT_PINK,
 	State.SQUAT: Color.DARK_KHAKI,
+	State.ATTACK: Color.RED,
 	
 }
 
@@ -158,8 +166,16 @@ var last_spike: Area2D
 var jump_buffer_timer:= 0.0
 var coyote_timer:= 0.0
 var dash_buffer_timer:= 0.0
-
+# 空中变速速度容器
 var air_speed_changer:= 0.0
+
+# 攻击按键缓存
+var attack_buffer_timer:= 0.0
+# 连招窗口
+var combo_window_timer:= 0.0
+# 连段序号
+var attack_step: int = 0
+var next_attack_queue:= false
 
 
 
@@ -184,7 +200,9 @@ func _physics_process(delta: float) -> void:
 	# 先更新输入缓冲和计时器，再让本帧状态读取它们。
 	_update_timers(delta)
 	# 朝向只由水平输入更新；没有输入时保持原朝向。
-	_update_facing(direction)
+	# 增加条件，防止滑墙时反方向的操作显示错误动画朝向
+	if current_state != State.WALLSLIDE:
+		_update_facing(direction)
 	# 所有状态共用重力，状态函数只处理各自额外的行为。
 	_apply_gravity(delta)
 	# 根据 current_state 执行一个状态函数。
@@ -238,6 +256,8 @@ func _process_state(direction: float, delta: float) -> void:
 			_state_squat(direction, delta)
 		State.SQUATHURT:
 			_state_squathurt()
+		State.ATTACK:
+			_state_attack(direction)
 			
 			
 #===================================================================================================
@@ -250,7 +270,9 @@ func _process_state(direction: float, delta: float) -> void:
 func _state_idle(direction: float, delta: float) -> void:
 	# 即使进入 IDLE 时还残留少量速度，也会平滑减到 0。
 	velocity.x = move_toward(velocity.x, 0.0, ground_deceleration * delta)
-	
+	if _can_attack():
+		_change_state(State.ATTACK)
+		return
 	# 地面按下“下”时进入普通蹲伏。
 	if _can_lowslide():
 		_change_state(State.SQUAT)
@@ -284,6 +306,10 @@ func _state_run(direction: float, delta: float) -> void:
 	# move_toward() 每帧只靠近一部分，形成加速和转向过程。
 	velocity.x = move_toward(velocity.x, target_speed, ground_acceleration * delta)
 	
+	if _can_attack():
+		_change_state(State.ATTACK)
+		return
+		
 	if _can_lowslide():
 		_change_state(State.SQUAT)
 		return
@@ -517,7 +543,39 @@ func _state_squat(direction: float, delta: float) -> void:
 func _state_squathurt() -> void:
 	pass
 
-
+func _state_attack(direction: float) -> void:
+	velocity.x = 0.0
+	print("attack_step: ", attack_step)
+	print("attack_frame: ", animated_sprite_2d.frame)
+	print("attack_buffer: ", attack_buffer)
+	if _is_combo_window_open():
+		if _can_attack():
+			attack_step += 1
+			match attack_step:
+				2:
+					animated_sprite_2d.play("attack2")
+				3:
+					animated_sprite_2d.play("attack3")
+				4:
+					attack_step = 0
+					return
+			return	
+		else:
+			if animated_sprite_2d.is_playing():
+				return	
+			elif is_on_floor():
+				if is_zero_approx(direction):
+					_change_state(State.IDLE)
+					return
+				else:
+					_change_state(State.RUN)
+					return
+			else:
+				_change_state(State.FALL)
+		
+		
+	
+		
 	
 # DIE：死亡状态目前只是占位，尚未实现行为。
 func _state_die(direction: float) -> void:
@@ -599,6 +657,9 @@ func _enter_state(new_state:State) -> void:
 				return
 			else:
 				_play_animation(&"squat")
+		State.ATTACK:
+			attack_step = 1
+			_play_animation(&"attack1")
 			
 			
 func _exit_state(old_state: State, new_state: State) -> void:
@@ -701,7 +762,7 @@ func _apply_air_movement(direction: float, delta: float)->void:
 	
 	# 空中使用 air_acceleration，因此手感可以与地面加速度分开调节。
 	velocity.x = move_toward(velocity.x, target_speed, air_speed_changer * delta)
-	print("air_speed_changer: ", air_speed_changer)
+	#print("air_speed_changer: ", air_speed_changer)
 	
 # 每个物理帧主动检查玩家是否仍与任意尖刺重叠。
 # 这样角色在持续接触尖刺时，无敌时间结束后仍能再次受伤。
@@ -726,6 +787,7 @@ func _update_timers(delta: float) -> void:
 	jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
 	coyote_timer = maxf(coyote_timer - delta, 0.0)
 	dash_buffer_timer = maxf(dash_buffer_timer - delta, 0.0)
+	attack_buffer_timer = maxf(attack_buffer_timer - delta, 0.0)
 	
 	# just_pressed 只在按下的第一帧成立；这里把一次输入保存为短计时器。
 	if Input.is_action_just_pressed("dash"):
@@ -735,6 +797,10 @@ func _update_timers(delta: float) -> void:
 	# 每个站在地面的物理帧都会刷新土狼时间；离地后才开始倒数。
 	if is_on_floor():
 		coyote_timer = coyote_duration
+	# 攻击按键缓存计时开始。
+	if Input.is_action_just_pressed("attack"):
+		attack_buffer_timer = attack_buffer
+		
 		
 # 跳跃缓冲和土狼时间同时有效时，允许开始一次跳跃。
 func _can_jump()  -> bool:
@@ -761,6 +827,23 @@ func _can_lowslide() -> bool:
 	return false	
 		
 
+func _can_attack() -> bool:
+	if (Input.is_action_just_pressed("attack") 
+	and is_on_floor() 
+	and (current_state == State.IDLE or current_state == State.RUN or current_state == State.ATTACK)
+	and attack_buffer > 0.0
+	):
+		return true
+	return false
 
+func _is_combo_window_open() -> bool:
+	match attack_step:
+		1:
+			return animated_sprite_2d.frame >5
+		2:
+			return animated_sprite_2d.frame > 1
+		3:
+			return	 false
 	
+	return false
 	
