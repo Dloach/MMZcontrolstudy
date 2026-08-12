@@ -231,7 +231,7 @@ func _physics_process(delta: float) -> void:
 	_apply_gravity(delta)
 	# 根据 current_state 执行一个状态函数。
 	_process_state(direction, delta)	
-	print("Hitbox monitoring: ", $Hitbox.monitoring)
+	#print("Hitbox monitoring: ", $Hitbox.monitoring)
 	# CharacterBody2D 真正根据 velocity 移动并更新地面、墙面碰撞信息。
 	move_and_slide()
 	
@@ -502,7 +502,7 @@ func _state_lowslide(direction: float, delta: float) -> void:
 	var must_stay_squat: bool = (
 		Input.is_action_pressed("move_down") or $StandCheck.is_colliding()
 	)
-	print("move_down_pressed: ", Input.is_action_pressed("move_down")," racast2d is colliding: ", $StandCheck.is_colliding())
+	#print("move_down_pressed: ", Input.is_action_pressed("move_down")," racast2d is colliding: ", $StandCheck.is_colliding())
 	# 没有方向输入时，等待速度降到停止阈值。
 	if is_zero_approx(direction):
 		if abs(velocity.x) <= dash_stop_speed:
@@ -621,7 +621,7 @@ func _change_state(new_state: State) -> void:
 	# 执行只需要在进入新状态瞬间发生一次的行为。
 	_enter_state(current_state)
 	# 在输出面板记录状态变化，方便检查状态机运行过程。
-	print("state changed to: ", State.keys()[current_state])
+	#print("state changed to: ", State.keys()[current_state])
 	
 # 缓存 spikes 分组内的所有节点，供重叠检测使用。
 @onready var spike_areas: Array = get_tree().get_nodes_in_group("spikes")
@@ -656,7 +656,7 @@ func _enter_state(new_state:State) -> void:
 				# 两者 x 坐标相同时无法判断左右，退回到朝向的反方向。
 				if knock_direction == 0.0:
 					knock_direction = -facing
-			print("knock_dir: ", knock_direction)
+			#print("knock_dir: ", knock_direction)
 			velocity = Vector2(knock_direction * hurt_back_x, hurt_bounce)
 			_update_facing(-knock_direction)
 			_play_animation(&"hurt")
