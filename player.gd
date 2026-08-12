@@ -71,7 +71,7 @@ enum State {
 
 @export_category("Dash")
 # 冲刺高速阶段的水平速度。
-@export var dash_speed:= 950.0
+@export var dash_speed:= 750.0
 # 冲刺保持恒定高速的时长，单位为秒。
 @export var dash_duration:= 0.18
 # 高速阶段结束后的水平减速度。
@@ -105,6 +105,8 @@ enum State {
 @export_category("Attack")
 # 攻击按键缓存
 @export var attack_buffer:= 0.15
+@export_range(0.0, 0.15, 0.005) var hit_stop_duration: float = 0.15
+
 
 
 # @onready 表示等节点进入场景树、子节点已经可用后再取得引用。
@@ -129,23 +131,54 @@ const ANIMATION_OFFSETS: Dictionary = {
 
 @onready var hitbosx_collision: CollisionShape2D = $Hitbox/CollisionShape2D
 
-const ATTACK_KNOCK_BACK_SPEED: Dictionary = {
-	1: 80.0,
-	2: -80.0,
-	3: 480.0,	
+
+const ATTACK_DATA: Dictionary = {
+	&"attack1":{
+		&"damage": 1,
+		&"knockback": Vector2(180.0, 0.0),
+		
+		&"hit_start": 4,
+		&"hit_end": 6,
+		
+		&"combo_start": 4,
+		&"combo_end": 6,
+		&"hitbox_width": 55.0,
+		&"attack_buffer": 0.15,
+		
+		&"hit_stop": 0.1,
+		&"engine_time_scale": 0.03,
+	},
+	
+	&"attack2":{
+		&"damage": 1,
+		&"knockback": Vector2(-50.0, -160.0),
+		
+		&"hit_start": 1,
+		&"hit_end": 3,
+		&"hitbox_width": 55.0,
+		&"attack_buffer": 0.15,
+		
+		&"combo_start": 1,
+		&"combo_end": 3,
+		
+		&"hit_stop": 0.1,
+		&"engine_time_scale": 0.03,
+	},
+	
+	&"attack3":{
+		&"damage": 1,
+		&"knockback": Vector2(720.0, 0.0),
+		
+		&"hit_start": 2,
+		&"hit_end": 6,
+		&"hitbox_width": 95.0,
+		&"attack_buffer": 0.25,
+		
+		&"hit_stop": 0.35,
+		&"engine_time_scale": 0.01,
+	},
 }
 
-const ATTACK_HIT_FRAMES: Dictionary = {
-	&"attack1": 4,
-	&"attack2": 1,
-	&"attack3": 2,
-}
-
-const HITBOX_SIZES: Dictionary = {
-	&"attack1": 55,
-	&"attack2": 55,
-	&"attack3": 95,
-}
 
 # 用于在角色头顶显示当前状态，方便学习和调试状态切换。
 @onready var state_label: Label = $Label
@@ -199,7 +232,9 @@ var attack_step: int = 0
 var next_attack_queue:= false
 # 收集被击中的对象
 var _hit_targets: Array = []
-
+var hit_stop_running:= false
+# 暂存下一次进入 HURT 时使用的水平击退方向。
+var pending_hurt_direction: float = 0.0
 
 
 #===================================================================================================
@@ -481,6 +516,7 @@ func _state_hurt(direction: float) -> void:
 				return
 		else:
 			_change_state(State.FALL)
+	
 			
 			
 # LOWSLIDE：与 DASH 共用剩余高速时间，随后使用矮碰撞体减速滑行。
@@ -567,10 +603,9 @@ func _state_attack(direction: float) -> void:
 	velocity.x = 0.0
 	_check_hit_frame()
 			
-	if _is_combo_window_open() and Input.is_action_just_pressed("attack"):
+	if (not next_attack_queue and _is_combo_window_open() and attack_buffer_timer > 0.0):
 		next_attack_queue = true
-		#attack_buffer_timer = attack_buffer
-	attack_buffer_timer = 0.0
+		attack_buffer_timer = 0.0
 	
 	if animated_sprite_2d.is_playing():
 		return
@@ -650,7 +685,10 @@ func _enter_state(new_state:State) -> void:
 			hurt_timer = hurt_duration
 			velocity = Vector2.ZERO
 			var knock_direction:= -facing
-			if last_spike != null:
+			
+			if not is_zero_approx(pending_hurt_direction):
+				knock_direction = pending_hurt_direction
+			elif last_spike != null:
 				# 角色在尖刺右边时得到正方向，左边时得到负方向。
 				knock_direction = signf(global_position.x - last_spike.global_position.x)
 				# 两者 x 坐标相同时无法判断左右，退回到朝向的反方向。
@@ -863,26 +901,32 @@ func _can_attack() -> bool:
 	return false
 
 func _is_combo_window_open() -> bool:
-	match attack_step:
-		1:
-			return animated_sprite_2d.frame > 3
-		2:
-			return animated_sprite_2d.frame > 1
-		3:
-			return	 false
+	var animation_name: StringName = animated_sprite_2d.animation
+
+	if not ATTACK_DATA.has(animation_name):
+		return false
 	
-	return false
+	var attack_data: Dictionary = ATTACK_DATA[animation_name]
+	
+	if (
+		not attack_data.has(&"combo_start")
+		or not attack_data.has(&"combo_end")
+	):
+		return false
+	
+	var combo_start: int = attack_data[&"combo_start"]
+	var combo_end: int = attack_data[&"combo_end"]
+	var current_frame = animated_sprite_2d.frame
+
+	return(
+		current_frame > combo_start and current_frame <= combo_end
+	)
+	
 	
 func _exit_animation(direction: float) -> void:
+	
 	$Hitbox.monitoring = false
 	_hit_targets.clear()
-	
-	var rectangle_shape := ($Hitbox/CollisionShape2D.shape as RectangleShape2D)
-	var hitbox_width: float = HITBOX_SIZES[&"attack1"]
-	
-	var new_size: Vector2 = rectangle_shape.size
-	new_size.x = hitbox_width
-	rectangle_shape.size = new_size
 	
 	if is_on_floor():
 		if is_zero_approx(direction):
@@ -896,32 +940,72 @@ func _exit_animation(direction: float) -> void:
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
+	var animation_name: StringName = animated_sprite_2d.animation
+	var attack_data: Dictionary = ATTACK_DATA[animation_name]
 	if body == self:
 		return	
 	if body not in _hit_targets:
 		_hit_targets.append(body)
 		if body.has_method("take_damage"):
-			body.take_damage(1, signf(body.global_position.x - global_position.x), ATTACK_KNOCK_BACK_SPEED.get(attack_step))
-			print(ATTACK_KNOCK_BACK_SPEED.get(attack_step))
+			var damage = attack_data[&"damage"]
+			var knock_back = attack_data[&"knockback"]
+			body.take_damage(damage, signf(body.global_position.x - global_position.x), knock_back)
+			
+			_start_hit_stop(attack_data)
 
 
 func _check_hit_frame() -> void:
 	var animation_name: StringName = animated_sprite_2d.animation
-	
-	if not ATTACK_HIT_FRAMES.has(animation_name):
+	if not ATTACK_DATA.has(animation_name):
 		$Hitbox.monitoring = false
 		return
 	
+	var attack_data: Dictionary = ATTACK_DATA[animation_name]
 	var rectangle_shape := ($Hitbox/CollisionShape2D.shape as RectangleShape2D)
 	if rectangle_shape == null:
 		return
 		
-	var hit_frame: int = ATTACK_HIT_FRAMES[animation_name]
-	var hitbox_width: float = HITBOX_SIZES[animation_name]
+	var hit_start: int = attack_data[&"hit_start"]
+	var hit_end: int = attack_data[&"hit_end"]
+	var hitbox_width: float = attack_data[&"hitbox_width"]
 	
 	var new_size: Vector2 = rectangle_shape.size
 	new_size.x = hitbox_width
 	rectangle_shape.size = new_size
 	
-	$Hitbox.monitoring = animated_sprite_2d.frame >= hit_frame
+	var current_frame = animated_sprite_2d.frame
 	
+	$Hitbox.monitoring = (current_frame >= hit_start and current_frame <= hit_end)
+	
+func _start_hit_stop(attack_data: Dictionary) -> void:
+	if hit_stop_running:
+		return
+	
+	hit_stop_running = true
+	
+	Engine.time_scale = attack_data[&"engine_time_scale"]
+	
+	await get_tree().create_timer(
+		attack_data[&"hit_stop"], true, false, true
+	).timeout
+	
+	Engine.time_scale = 1.0
+	hit_stop_running = false
+	
+	
+func take_contact_damage(source_position: Vector2) -> void:
+	if hurt_immunity_timer > 0.0:
+		return
+	
+	if current_state == State.DIE:
+		return
+		
+	pending_hurt_direction = signf(global_position.x - source_position.x)
+	
+	if is_zero_approx(pending_hurt_direction):
+		pending_hurt_direction = -facing
+		
+	last_spike = null
+	
+	hurt_immunity_timer = hurt_immunity
+	_change_state(State.HURT)
